@@ -1,6 +1,7 @@
 body {
     font-family: Arial, sans-serif;
     text-align: center;
+    margin: 20px;
 }
 
 .calendar-header {
@@ -26,6 +27,8 @@ body {
 
 #weekdays div {
     text-align: center;
+    padding: 10px;
+    border-bottom: 2px solid black;
 }
 
 #calendar {
