@@ -1,26 +1,56 @@
 document.addEventListener("DOMContentLoaded", function() {
     const calendar = document.getElementById("calendar");
+    const monthYear = document.getElementById("monthYear");
+    const prevMonthBtn = document.getElementById("prevMonth");
+    const nextMonthBtn = document.getElementById("nextMonth");
 
-    function createCalendar() {
-        calendar.innerHTML = ""; // Clear existing days
-        for (let i = 1; i <= 30; i++) { // Simple 30-day month
-            let day = document.createElement("div");
-            day.classList.add("day");
-            day.innerHTML = `<strong>${i}</strong><br><textarea id="note-${i}" placeholder="Write here..."></textarea>`;
-            calendar.appendChild(day);
+    let currentDate = new Date();
+
+    function createCalendar(year, month) {
+        calendar.innerHTML = ""; // Clear previous days
+
+        let firstDay = new Date(year, month, 1).getDay(); // Day of the week (0-6)
+        let daysInMonth = new Date(year, month + 1, 0).getDate(); // Total days in month
+        
+        monthYear.textContent = `${currentDate.toLocaleString("default", { month: "long" })} ${year}`;
+
+        // Create blank spots for days before the first day
+        for (let i = 0; i < firstDay; i++) {
+            let emptyDiv = document.createElement("div");
+            calendar.appendChild(emptyDiv);
+        }
+
+        // Generate days
+        for (let day = 1; day <= daysInMonth; day++) {
+            let dayDiv = document.createElement("div");
+            dayDiv.classList.add("day");
+            dayDiv.innerHTML = `<strong>${day}</strong><br><textarea id="note-${year}-${month}-${day}" placeholder="Write here..."></textarea>`;
+            calendar.appendChild(dayDiv);
 
             // Load saved notes
-            let savedNote = localStorage.getItem(`note-${i}`);
+            let savedNote = localStorage.getItem(`note-${year}-${month}-${day}`);
             if (savedNote) {
-                day.querySelector("textarea").value = savedNote;
+                dayDiv.querySelector("textarea").value = savedNote;
             }
 
             // Save notes when typing
-            day.querySelector("textarea").addEventListener("input", function() {
-                localStorage.setItem(`note-${i}`, this.value);
+            dayDiv.querySelector("textarea").addEventListener("input", function() {
+                localStorage.setItem(`note-${year}-${month}-${day}`, this.value);
             });
         }
     }
 
-    createCalendar();
+    // Navigation Handlers
+    prevMonthBtn.addEventListener("click", function() {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        createCalendar(currentDate.getFullYear(), currentDate.getMonth());
+    });
+
+    nextMonthBtn.addEventListener("click", function() {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        createCalendar(currentDate.getFullYear(), currentDate.getMonth());
+    });
+
+    // Initialize
+    createCalendar(currentDate.getFullYear(), currentDate.getMonth());
 });
