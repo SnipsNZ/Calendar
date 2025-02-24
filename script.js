@@ -9,19 +9,24 @@ document.addEventListener("DOMContentLoaded", function() {
     let currentDate = new Date();
 
     function createCalendar(year, month) {
-        calendar.innerHTML = ""; // Clear previous days
+        calendar.innerHTML = ""; // Clear previous calendar
 
-        let firstDay = new Date(year, month, 1).getDay();
+        let firstDay = new Date(year, month, 1).getDay(); 
         let daysInMonth = new Date(year, month + 1, 0).getDate();
-        
-        // Adjust first day (Sunday=0 to be last)
-        firstDay = (firstDay === 0) ? 6 : firstDay - 1;
 
         monthYear.textContent = `${currentDate.toLocaleString("default", { month: "long" })} ${year}`;
 
-        // Empty slots for correct alignment
+        // Adjust first day (make Monday=0, Sunday=6)
+        firstDay = (firstDay === 0) ? 6 : firstDay - 1;
+
+        // Ensure the calendar grid has exactly 7 columns
+        calendar.style.display = "grid";
+        calendar.style.gridTemplateColumns = "repeat(7, 1fr)";
+
+        // Fill empty slots before the first day
         for (let i = 0; i < firstDay; i++) {
             let emptyDiv = document.createElement("div");
+            emptyDiv.classList.add("empty-day");
             calendar.appendChild(emptyDiv);
         }
 
