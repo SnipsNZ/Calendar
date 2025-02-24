@@ -4,42 +4,204 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Allan's Calendar</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        #calendar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #monthYear {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .nav-buttons {
+            margin-bottom: 10px;
+        }
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        #calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            width: 90%;
+            max-width: 600px;
+            margin-top: 10px;
+        }
+        .day, .empty-day {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+        .empty-day {
+            visibility: hidden;
+        }
+        .day strong {
+            display: block;
+            font-size: 1.2em;
+        }
+        textarea {
+            width: 90%;
+            height: 40px;
+            margin-top: 5px;
+        }
+        .clear-btn {
+            margin-top: 5px;
+            font-size: 0.8em;
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 2px 5px;
+            cursor: pointer;
+        }
+        .today {
+            background: yellow;
+        }
+    </style>
 </head>
 <body>
+
     <h1>Allan's Calendar</h1>
-
-    <!-- Navigation Buttons -->
-    <div class="calendar-header">
-        <button id="prevYear">⏮️</button>
-        <button id="prevMonth">⬅️</button>
-        <h2 id="monthYear"></h2>
-        <button id="nextMonth">➡️</button>
-        <button id="nextYear">⏭️</button>
-    </div>
-
-    <!-- Calendar Grid -->
+    
     <div id="calendar-container">
-        <div id="weekdays">
-            <div>Monday</div>
-            <div>Tuesday</div>
-            <div>Wednesday</div>
-            <div>Thursday</div>
-            <div>Friday</div>
-            <div>Saturday</div>
-            <div>Sunday</div>
+        <div class="nav-buttons">
+            <button id="prevMonth">⬅️ Previous Month</button>
+            <span id="monthYear">Month Year</span>
+            <button id="nextMonth">Next Month ➡️</button>
+        </div>
+        <div>
+            <button id="exportNotes">📥 Export Notes</button>
+            <button id="importNotes">📤 Import Notes</button>
+            <input type="file" id="fileInput" style="display: none;">
         </div>
         <div id="calendar"></div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const calendar = document.getElementById("calendar");
+            const monthYear = document.getElementById("monthYear");
+            const prevMonthBtn = document.getElementById("prevMonth");
+            const nextMonthBtn = document.getElementById("nextMonth");
+            const exportBtn = document.getElementById("exportNotes");
+            const importBtn = document.getElementById("importNotes");
+            const fileInput = document.getElementById("fileInput");
 
-    <button id="prevMonth">⬅️ Previous Month</button>
-<button id="nextMonth">Next Month ➡️</button>
-<button id="exportNotes">📥 Export Notes</button>
-<button id="importNotes">📤 Import Notes</button>
-<input type="file" id="fileInput" style="display: none;">
+            let currentDate = new Date();
 
-    
+            function createCalendar(year, month) {
+                calendar.innerHTML = "";
+
+                let firstDay = new Date(year, month, 1).getDay();
+                let daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                monthYear.textContent = `${currentDate.toLocaleString("default", { month: "long" })} ${year}`;
+
+                firstDay = (firstDay === 0) ? 6 : firstDay - 1;
+
+                calendar.style.display = "grid";
+                calendar.style.gridTemplateColumns = "repeat(7, 1fr)";
+
+                for (let i = 0; i < firstDay; i++) {
+                    let emptyDiv = document.createElement("div");
+                    emptyDiv.classList.add("empty-day");
+                    calendar.appendChild(emptyDiv);
+                }
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    let dayDiv = document.createElement("div");
+                    dayDiv.classList.add("day");
+
+                    let today = new Date();
+                    if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                        dayDiv.classList.add("today");
+                    }
+
+                    let noteKey = `note-${year}-${month}-${day}`;
+                    dayDiv.innerHTML = `<strong>${day}</strong><br>
+                        <textarea id="${noteKey}" placeholder="Write here..."></textarea>
+                        <button class="clear-btn" data-key="${noteKey}">X</button>`;
+
+                    calendar.appendChild(dayDiv);
+
+                    let savedNote = localStorage.getItem(noteKey);
+                    if (savedNote) {
+                        dayDiv.querySelector("textarea").value = savedNote;
+                    }
+
+                    dayDiv.querySelector("textarea").addEventListener("input", function() {
+                        localStorage.setItem(noteKey, this.value);
+                    });
+
+                    dayDiv.querySelector(".clear-btn").addEventListener("click", function() {
+                        localStorage.removeItem(noteKey);
+                        dayDiv.querySelector("textarea").value = "";
+                    });
+                }
+            }
+
+            prevMonthBtn.addEventListener("click", () => changeMonth(-1));
+            nextMonthBtn.addEventListener("click", () => changeMonth(1));
+
+            function changeMonth(offset) {
+                currentDate.setMonth(currentDate.getMonth() + offset);
+                createCalendar(currentDate.getFullYear(), currentDate.getMonth());
+            }
+
+            // Export Notes as JSON File
+            exportBtn.addEventListener("click", function() {
+                let allNotes = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    let key = localStorage.key(i);
+                    if (key.startsWith("note-")) {
+                        allNotes[key] = localStorage.getItem(key);
+                    }
+                }
+
+                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allNotes));
+                let downloadAnchor = document.createElement("a");
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", "calendar_notes.json");
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            });
+
+            // Import Notes from JSON File
+            importBtn.addEventListener("click", function() {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener("change", function(event) {
+                let file = event.target.files[0];
+                let reader = new FileReader();
+
+                reader.onload = function(e) {
+                    let importedNotes = JSON.parse(e.target.result);
+                    for (let key in importedNotes) {
+                        localStorage.setItem(key, importedNotes[key]);
+                    }
+                    createCalendar(currentDate.getFullYear(), currentDate.getMonth());
+                };
+
+                reader.readAsText(file);
+            });
+
+            createCalendar(currentDate.getFullYear(), currentDate.getMonth());
+        });
+    </script>
+
 </body>
 </html>
